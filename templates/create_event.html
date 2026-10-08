@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="back-link" href="{{ url_for('organizer') }}">← Organizer dashboard</a>
+<section class="create-layout">
+    <div class="create-story">
+        <span class="section-kicker">EVENT MANAGEMENT</span>
+        <h1>Put something good on the calendar.</h1>
+        <p class="detail-lead">Publish a new event for students without touching the database.</p>
+        <div class="editorial-note"><span class="note-number">01</span><div><strong>Capacity is enforced on the server.</strong><span>Registrations are checked in a transaction so simultaneous requests cannot simply overrun the limit.</span></div></div>
+    </div>
+    <section class="form-card">
+        <span class="section-kicker">NEW EVENT</span>
+        <h2>Event details</h2>
+        {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+        <form method="post" class="app-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <label for="name">Event name<input id="name" name="name" type="text" maxlength="120" required value="{{ form.get('name','') }}" placeholder="e.g. Design Night 2026"></label>
+            <label for="description">Description<textarea id="description" name="description" rows="5" maxlength="500" required placeholder="What should students know before they register?">{{ form.get('description','') }}</textarea></label>
+            <div class="form-two"><label for="venue">Venue<input id="venue" name="venue" type="text" maxlength="160" required value="{{ form.get('venue','') }}" placeholder="Building / auditorium"></label><label for="capacity">Capacity<input id="capacity" name="capacity" type="number" min="1" max="100000" required value="{{ form.get('capacity','100') }}"></label></div>
+            <label for="event_date">Date & time<input id="event_date" name="event_date" type="datetime-local" required value="{{ form.get('event_date','') }}"></label>
+            <button class="button primary full" type="submit">Publish event</button>
+        </form>
+    </section>
+</section>
+{% endblock %}

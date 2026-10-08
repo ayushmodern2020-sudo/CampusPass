@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="back-link" href="{{ url_for('my_tickets') }}">← My tickets</a>
+<section class="official-ticket">
+    <div class="official-head">
+        <div><span class="section-kicker">DIGITAL PASS</span><h1>{{ ticket.event_name }}</h1><p>Ticket #{{ ticket.id }}</p></div>
+        <span class="ticket-state {{ 'checked' if ticket.status == 'CHECKED-IN' else '' }}">{{ ticket.status }}</span>
+    </div>
+    <div class="ticket-divider"></div>
+    <div class="ticket-body">
+        <div class="qr-large official-qr"><img src="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" alt="Secure QR ticket"></div>
+        <div class="official-facts">
+            <div><span>ATTENDEE</span><strong>{{ ticket.participant_name }}</strong></div>
+            <div><span>EMAIL</span><strong>{{ ticket.email }}</strong></div>
+            <div><span>VENUE</span><strong>{{ ticket.venue }}</strong></div>
+            <div><span>DATE</span><strong>{{ ticket.event_date }}</strong></div>
+            <div><span>ISSUED</span><strong>{{ ticket.token_created_at }}</strong></div>
+            {% if ticket.status == 'CHECKED-IN' %}<div><span>CHECKED IN</span><strong>{{ ticket.checked_in_at }}</strong></div><div><span>VERIFIED BY</span><strong>{{ ticket.checked_in_by or 'Organizer' }}</strong></div>{% endif %}
+        </div>
+    </div>
+    <div class="ticket-security"><strong>Ticket security</strong><span>This QR contains a signed token. The organizer validates the signature, expiry, ownership record, and single-use status before admission.</span></div>
+    <div class="button-row"><a class="button primary" href="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" target="_blank">Open QR</a><a class="button quiet" href="{{ url_for('email_preview', ticket_id=ticket.id) }}">Email preview</a></div>
+</section>
+{% endblock %}

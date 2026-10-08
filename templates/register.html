@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="back-link" href="{{ url_for('events') }}">← All events</a>
+<section class="detail-layout">
+    <div class="detail-story">
+        <span class="section-kicker">EVENT {{ '%02d'|format(event.id) }}</span>
+        <h1>{{ event.name }}</h1>
+        <p class="detail-lead">{{ event.description }}</p>
+        <div class="fact-grid">
+            <div><span>WHEN</span><strong>{{ event.event_date }}</strong></div>
+            <div><span>WHERE</span><strong>{{ event.venue }}</strong></div>
+            <div><span>SPACES</span><strong>{{ registered }} / {{ event.capacity }}</strong></div>
+            <div><span>ACCOUNT</span><strong>{{ student_email }}</strong></div>
+        </div>
+    </div>
+    <aside class="reserve-card">
+        {% if existing_ticket %}
+            <span class="section-kicker">ALREADY RESERVED</span>
+            <h2>You're on the list.</h2>
+            <p>Your ticket for this event is already in your account.</p>
+            <a class="button primary full" href="{{ url_for('ticket_page', ticket_id=existing_ticket.id) }}">Open my ticket</a>
+        {% elif full %}
+            <span class="section-kicker">REGISTRATION CLOSED</span>
+            <h2>This one is full.</h2>
+            <p>No additional registrations can be accepted.</p>
+            <a class="button quiet full" href="{{ url_for('events') }}">Browse other events</a>
+        {% else %}
+            <span class="section-kicker">RESERVE A PLACE</span>
+            <h2>Ready to go?</h2>
+            <p>You're signed in as <strong>{{ student_name }}</strong>. Confirm once and we'll issue a signed QR ticket for your account.</p>
+            <form method="post" action="{{ url_for('register', event_id=event.id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="button primary full" type="submit">Reserve my place</button>
+            </form>
+            <div class="mini-note"><strong>No double booking.</strong><span>One registration per student for this event.</span></div>
+        {% endif %}
+    </aside>
+</section>
+{% endblock %}

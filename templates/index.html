@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="events-hero">
+    <div class="events-hero-copy">
+        <span class="section-kicker">THE CAMPUS CALENDAR</span>
+        <h1>Things worth leaving your room for.</h1>
+        <p>Talks, showcases, workshops, hackathons and nights out — all in one student calendar.</p>
+    </div>
+    <div class="events-count">
+        <span>LIVE EVENTS</span>
+        <strong>{{ events|length }}</strong>
+        <small>Open for student registration</small>
+    </div>
+</section>
+
+<section class="events-toolbar">
+    <div>
+        <span class="section-kicker">UP NEXT</span>
+        <h2>Browse events</h2>
+    </div>
+    <a class="text-link" href="{{ url_for('my_tickets') }}">See my tickets →</a>
+</section>
+
+<section class="event-grid editorial-grid" id="events">
+{% for event in events %}
+<article class="event-card editorial-card">
+    <div class="event-ribbon"><span>{{ '%02d'|format(loop.index) }}</span><span>{{ event.remaining }} available</span></div>
+    <div class="event-date">{{ event.event_date }}</div>
+    <h3>{{ event.name }}</h3>
+    <p>{{ event.description }}</p>
+    <div class="event-card-foot">
+        <span>{{ event.venue }}</span>
+        {% if event.remaining > 0 %}<span class="capacity-note">{{ event.remaining }} seats</span>{% else %}<span class="capacity-note sold-out">Full</span>{% endif %}
+    </div>
+    <a class="event-action" href="{{ url_for('event_page', event_id=event.id) }}">{{ 'View event' if event.remaining == 0 else 'View & reserve' }} <span>↗</span></a>
+</article>
+{% else %}
+<div class="empty-state panel"><h3>No events yet</h3><p>There are no published events at the moment.</p></div>
+{% endfor %}
+</section>
+{% endblock %}

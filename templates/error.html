@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="error-page">
+    <span class="section-kicker">REQUEST ERROR</span>
+    <div class="error-code">!</div>
+    <h1>{{ title }}</h1>
+    <p class="detail-lead">{{ message }}</p>
+    {% if student_authenticated %}<a class="button primary" href="{{ url_for('events') }}">Back to events</a>{% elif admin_authenticated %}<a class="button primary" href="{{ url_for('organizer') }}">Back to dashboard</a>{% else %}<a class="button primary" href="{{ url_for('student_login') }}">Student login</a>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="admin-shell">
+    <div class="admin-hero">
+        <div><span class="section-kicker">ORGANIZER WORKSPACE</span><h1>Keep the room moving.</h1><p>Welcome back, {{ admin_username }}. Check people in, watch capacity, and publish the next event.</p></div>
+        <div class="admin-hero-actions"><a class="button primary" href="{{ url_for('create_event') }}">+ Create event</a><form method="post" action="{{ url_for('admin_logout') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="button quiet" type="submit">Sign out</button></form></div>
+    </div>
+
+    <div class="stats-strip">
+        <div><span>EVENTS</span><strong>{{ events|length }}</strong></div>
+        <div><span>TICKETS</span><strong>{{ total_tickets }}</strong></div>
+        <div><span>CHECKED IN</span><strong>{{ total_checked_in }}</strong></div>
+        <div><span>STUDENTS</span><strong>{{ total_students }}</strong></div>
+    </div>
+
+    <div class="scanner-columns">
+        <section class="scanner-card">
+            <div class="section-head-row"><div><span class="section-kicker">LIVE CHECK-IN</span><h2>Scan a ticket</h2><p>Use a camera or paste a signed ticket token.</p></div><span class="live-mark"><i></i> READY</span></div>
+            <div class="scanner-stage"><div id="reader"></div><div class="scanner-frame"></div></div>
+            <div class="scanner-actions"><button class="button primary" id="start-scan">Start camera</button><button class="button quiet" id="stop-scan">Stop</button></div>
+            <div class="scanner-status"><i></i><span id="camera-status">Camera is idle.</span></div>
+        </section>
+
+        <section class="verify-card">
+            <span class="section-kicker">MANUAL CHECK</span><h2>Ticket token</h2><p>Fallback for a QR that will not scan.</p>
+            <label for="token">Signed token<textarea id="token" rows="7" placeholder="Paste token here..."></textarea></label>
+            <button class="button primary full" id="verify-token">Verify ticket</button>
+            <div id="result" class="result idle"><span>READY</span><small>Waiting for a ticket.</small></div>
+            <div class="verify-list"><div><b>01</b><span>Signature verified server-side.</span></div><div><b>02</b><span>Single-use status checked atomically.</span></div><div><b>03</b><span>Successful scans written to the audit trail.</span></div></div>
+        </section>
+    </div>
+
+    <section class="admin-events-section">
+        <div class="section-head-row"><div><span class="section-kicker">EVENT MANAGEMENT</span><h2>Published events</h2></div><a class="text-link" href="{{ url_for('create_event') }}">Create another →</a></div>
+        <div class="admin-event-list">
+        {% for event in events %}
+            <article class="admin-event-row">
+                <div class="event-id">{{ '%02d'|format(loop.index) }}</div>
+                <div class="admin-event-copy"><div class="event-live-status">LIVE</div><h3>{{ event.name }}</h3><p>{{ event.event_date }} · {{ event.venue }}</p></div>
+                <div class="event-numbers"><span><b>{{ event.registered }}</b> registered</span><span><b>{{ event.checked_in }}</b> checked in</span><span><b>{{ event.capacity - event.registered if event.capacity - event.registered > 0 else 0 }}</b> remaining</span></div>
+                <button class="button quiet stats-button" type="button" data-event-id="{{ event.id }}">Refresh</button>
+                <div class="event-live-status" id="event-status-{{ event.id }}"></div>
+            </article>
+        {% else %}<div class="empty-state panel"><h3>No events published</h3><p>Create your first event to start accepting registrations.</p><a class="button primary" href="{{ url_for('create_event') }}">Create first event</a></div>{% endfor %}
+        </div>
+    </section>
+
+    <section class="audit-section">
+        <div class="section-head-row"><div><span class="section-kicker">RECENT ACTIVITY</span><h2>Check-in audit</h2></div><span class="muted">Latest 12 attempts</span></div>
+        {% if recent_audit %}
+        <div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Ticket</th><th>Attendee</th><th>Status</th><th>Organizer</th><th>Time</th></tr></thead><tbody>{% for item in recent_audit %}<tr><td>#{{ item.ticket_id }}</td><td>{{ item.participant_name }}</td><td><span class="audit-status {{ 'ok' if item.status == 'CHECKED-IN' else 'warn' }}">{{ item.status }}</span></td><td>{{ item.admin_username }}</td><td>{{ item.scanned_at }}</td></tr>{% endfor %}</tbody></table></div>
+        {% else %}<div class="empty-state panel"><p>No check-in activity yet.</p></div>{% endif %}
+    </section>
+</section>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="{{ url_for('static', filename='organizer.js') }}"></script>
+{% endblock %}

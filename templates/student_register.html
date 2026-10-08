@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Create Student Account · {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-screen auth-register">
+<div class="auth-layout">
+    <section class="auth-story">
+        <a class="wordmark wordmark-inverse" href="{{ url_for('student_login') }}">
+            <span class="wordmark-mark">CP</span>
+            <span class="wordmark-name">{{ app_name }}</span>
+        </a>
+        <div class="story-body compact">
+            <span class="section-kicker inverse">NEW STUDENT</span>
+            <h1>Your next campus thing starts here.</h1>
+            <p>Create an account once. Your registrations, QR tickets, and attendance history stay in one place.</p>
+            <div class="story-note"><strong>Good to know</strong><span>We store passwords as secure hashes and keep ticket access behind your authenticated student session.</span></div>
+        </div>
+        <div class="story-foot">{{ app_name }} · student access</div>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-panel-inner">
+            <span class="section-kicker">CREATE ACCOUNT</span>
+            <h2>Set up your profile.</h2>
+            <p class="auth-subtitle">Use the details you will use to receive event tickets.</p>
+            {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+            <form method="post" action="{{ url_for('student_register') }}" class="auth-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ next }}">
+                <label for="name">Full name
+                    <input id="name" name="name" type="text" maxlength="80" required autocomplete="name" placeholder="Your full name">
+                </label>
+                <label for="email">Email
+                    <input id="email" name="email" type="email" maxlength="160" required autocomplete="email" placeholder="you@example.com">
+                </label>
+                <label for="password">Password
+                    <input id="password" name="password" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters">
+                </label>
+                <label for="confirm_password">Confirm password
+                    <input id="confirm_password" name="confirm_password" type="password" minlength="8" required autocomplete="new-password" placeholder="Repeat your password">
+                </label>
+                <div class="form-help">8+ characters · uppercase · lowercase · number</div>
+                <button class="button primary full" type="submit">Create account</button>
+            </form>
+            <div class="auth-switch">Already registered? <a href="{{ url_for('student_login', next=next) }}">Sign in</a></div>
+        </div>
+    </section>
+</div>
+</body>
+</html>

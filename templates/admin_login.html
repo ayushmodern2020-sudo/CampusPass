@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Organizer Login · {{ app_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-screen auth-admin">
+<div class="auth-layout">
+    <section class="auth-story">
+        <a class="wordmark wordmark-inverse" href="{{ url_for('student_login') }}">
+            <span class="wordmark-mark">CP</span>
+            <span class="wordmark-name">{{ app_name }}</span>
+        </a>
+        <div class="story-body compact">
+            <span class="section-kicker inverse">ORGANIZER CONTROL</span>
+            <h1>Run the door without losing the room.</h1>
+            <p>Publish events, watch registrations, and verify tickets from one focused organizer workspace.</p>
+            <div class="admin-rail">
+                <span><b>01</b> Event publishing</span>
+                <span><b>02</b> Live check-in</span>
+                <span><b>03</b> Attendance records</span>
+            </div>
+        </div>
+        <div class="story-foot">Restricted area · authorized organizers only</div>
+    </section>
+
+    <section class="auth-panel">
+        <div class="auth-panel-inner">
+            <span class="section-kicker">ORGANIZER ACCESS</span>
+            <h2>Sign in to manage events.</h2>
+            <p class="auth-subtitle">Use your authorized organizer credentials.</p>
+            {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+            <form method="post" action="{{ url_for('admin_login_submit') }}" class="auth-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ next }}">
+                <label for="username">Organizer username
+                    <input id="username" name="username" type="text" autocomplete="username" required placeholder="admin">
+                </label>
+                <label for="password">Password
+                    <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your password">
+                </label>
+                <button class="button primary full" type="submit">Open organizer dashboard</button>
+            </form>
+            <div class="security-strip"><strong>Protected session</strong><span>CSRF validation, rate limiting, and server-side authorization stay enabled.</span></div>
+            <div class="auth-divider"><span>Student</span></div>
+            <a class="button quiet full" href="{{ url_for('student_login') }}">Return to student login</a>
+        </div>
+    </section>
+</div>
+</body>
+</html>

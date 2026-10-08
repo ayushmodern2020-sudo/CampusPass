@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="success-page">
+    <div class="success-mark">✓</div>
+    <span class="section-kicker">REGISTRATION CONFIRMED</span>
+    <h1>You're booked.</h1>
+    <p class="lead">{{ ticket.event_name }} · Ticket #{{ ticket.id }}</p>
+
+    <div class="pass-preview">
+        <div class="pass-left">
+            <span class="pass-label">{{ app_name }}</span>
+            <h2>{{ ticket.event_name }}</h2>
+            <div class="pass-facts"><span>{{ ticket.venue }}</span><span>{{ ticket.event_date }}</span><span>{{ ticket.participant_name }}</span></div>
+            <span class="ticket-state">{{ ticket.status }}</span>
+        </div>
+        <div class="pass-qr"><img src="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" alt="Secure QR ticket"></div>
+    </div>
+
+    <div class="email-state {{ 'success' if email_result.mode == 'resend' else 'error' }}">
+        <strong>{{ email_result.message }}</strong><span>{{ email_result.provider }}</span>
+    </div>
+
+    <div class="button-row center-row">
+        <a class="button primary" href="{{ url_for('ticket_page', ticket_id=ticket.id) }}">Open ticket</a>
+        <a class="button quiet" href="{{ url_for('my_tickets') }}">My tickets</a>
+    </div>
+
+    <details class="developer-box"><summary>Developer testing token</summary><textarea readonly>{{ token }}</textarea></details>
+</section>
+{% endblock %}
