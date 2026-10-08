@@ -14,9 +14,10 @@ from urllib.parse import urlsplit
 
 import qrcode
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_file, send_from_directory, session, url_for
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 from services.email_service import build_ticket_email, send_ticket_email
 
@@ -25,9 +26,11 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "data" / "app.db"
 QR_DIR = BASE_DIR / "data" / "qr"
+EVENT_IMAGE_DIR = BASE_DIR / "data" / "event_images"
 EMAIL_DIR = BASE_DIR / ".tmp" / "emails"
 
 QR_DIR.mkdir(parents=True, exist_ok=True)
+EVENT_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 EMAIL_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
@@ -57,6 +60,47 @@ serializer = URLSafeTimedSerializer(app.config["SECRET_KEY"])
 login_failures = {}
 MAX_LOGIN_ATTEMPTS = 5
 LOGIN_WINDOW_SECONDS = 300
+
+EVENT_IMAGE_BY_ID = {
+    1: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=82",
+    2: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=82",
+    3: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=82",
+    4: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82",
+    5: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=82",
+    6: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=82",
+}
+
+EVENT_IMAGE_DEFAULT = "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=82"
+ALLOWED_EVENT_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_EVENT_IMAGE_BYTES = 5 * 1024 * 1024
+
+def valid_event_image_bytes(image):
+    header = image.stream.read(16)
+    image.stream.seek(0)
+    return (
+        header.startswith(b"\xff\xd8\xff")
+        or header.startswith(b"\x89PNG\r\n\x1a\n")
+        or (header[:4] == b"RIFF" and header[8:12] == b"WEBP")
+    )
+
+
+def event_image_url(name, event_id=None, image_path=None):
+    if image_path:
+        return url_for("event_image", filename=image_path)
+    if event_id in EVENT_IMAGE_BY_ID:
+        return EVENT_IMAGE_BY_ID[event_id]
+    value = (name or "").lower()
+    keyword_images = [
+        (("cyber", "security"), "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=82"),
+        (("robot",), "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=82"),
+        (("hackathon", "coding", "programming"), "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=82"),
+        (("ai", "artificial intelligence"), "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=82"),
+        (("tech", "technology"), "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=82"),
+    ]
+    for keywords, image in keyword_images:
+        if any(keyword in value for keyword in keywords):
+            return image
+    return EVENT_IMAGE_DEFAULT
 
 
 def db():
@@ -92,7 +136,7 @@ def add_security_headers(response):
         "default-src 'self'; "
         "script-src 'self' https://unpkg.com; "
         "style-src 'self'; "
-        "img-src 'self' data:; "
+        "img-src 'self' data: https://images.unsplash.com; "
         "font-src 'self'; "
         "connect-src 'self'; "
         "media-src 'self' blob:; "
@@ -225,7 +269,9 @@ def init_db():
             venue TEXT NOT NULL,
             event_date TEXT NOT NULL,
             capacity INTEGER NOT NULL CHECK(capacity > 0),
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            image_path TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS participants (
@@ -305,6 +351,15 @@ def init_db():
     if "admin_username" not in audit_columns:
         connection.execute("ALTER TABLE checkin_audit ADD COLUMN admin_username TEXT")
 
+    event_columns = {
+        row["name"]
+        for row in connection.execute("PRAGMA table_info(events)").fetchall()
+    }
+    if "image_path" not in event_columns:
+        connection.execute("ALTER TABLE events ADD COLUMN image_path TEXT")
+    if "is_active" not in event_columns:
+        connection.execute("ALTER TABLE events ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+
     connection.execute(
         """
         CREATE UNIQUE INDEX IF NOT EXISTS idx_participants_email_lower
@@ -362,7 +417,7 @@ def init_db():
 
 def capacity_for_event(connection, event_id):
     event = connection.execute(
-        "SELECT * FROM events WHERE id = ?",
+        "SELECT * FROM events WHERE id = ? AND is_active = 1",
         (event_id,),
     ).fetchone()
 
@@ -544,7 +599,7 @@ def index():
 def events():
     connection = db()
     rows = connection.execute(
-        "SELECT * FROM events ORDER BY event_date"
+        "SELECT * FROM events WHERE is_active = 1 ORDER BY event_date"
     ).fetchall()
 
     event_list = []
@@ -556,6 +611,7 @@ def events():
         item = dict(row)
         item["registered"] = registered
         item["remaining"] = max(row["capacity"] - registered, 0)
+        item["image_url"] = event_image_url(row["name"], row["id"], row["image_path"])
         event_list.append(item)
 
     connection.close()
@@ -590,8 +646,11 @@ def event_page(event_id):
         ), 404
 
     context = app_context()
+    event_data = dict(event)
+    event_data["image_url"] = event_image_url(event_data["name"], event_data["id"], event_data.get("image_path"))
+
     context.update(
-        event=dict(event),
+        event=event_data,
         registered=registered,
         full=registered >= event["capacity"],
         existing_ticket=dict(existing) if existing else None,
@@ -1080,6 +1139,7 @@ def organizer():
             COALESCE(SUM(CASE WHEN t.status = 'CHECKED-IN' THEN 1 ELSE 0 END), 0) AS checked_in
         FROM events e
         LEFT JOIN tickets t ON t.event_id = e.id
+        WHERE e.is_active = 1
         GROUP BY e.id
         ORDER BY e.event_date
         """
@@ -1120,7 +1180,7 @@ def organizer():
 
     context = app_context()
     context.update(
-        events=[dict(row) for row in events_rows],
+        events=[dict(row) | {"image_url": event_image_url(row["name"], row["id"], row["image_path"])} for row in events_rows],
         total_tickets=total_tickets,
         total_checked_in=total_checked_in,
         total_students=total_students,
@@ -1139,12 +1199,14 @@ def create_event():
         venue = request.form.get("venue", "").strip()
         event_date_input = request.form.get("event_date", "").strip()
         capacity_raw = request.form.get("capacity", "").strip()
+        image = request.files.get("image")
 
         try:
             capacity = int(capacity_raw)
         except ValueError:
             capacity = 0
 
+        error = None
         if not name or len(name) > 120:
             error = "Event name is required and must be under 120 characters."
         elif not description or len(description) > 500:
@@ -1157,9 +1219,25 @@ def create_event():
             try:
                 parsed = datetime.fromisoformat(event_date_input)
                 event_date = parsed.strftime("%Y-%m-%d %I:%M %p")
-                error = None
             except ValueError:
                 error = "Choose a valid event date and time."
+
+        image_filename = None
+        if not error and image and image.filename:
+            original_name = secure_filename(image.filename)
+            extension = Path(original_name).suffix.lower().lstrip(".")
+            if extension not in ALLOWED_EVENT_IMAGE_EXTENSIONS:
+                error = "Event image must be JPG, JPEG, PNG, or WEBP."
+            else:
+                image.stream.seek(0, os.SEEK_END)
+                image_size = image.stream.tell()
+                image.stream.seek(0)
+                if image_size > MAX_EVENT_IMAGE_BYTES:
+                    error = "Event image must be 5 MB or smaller."
+                elif not valid_event_image_bytes(image):
+                    error = "The uploaded file is not a valid JPG, PNG, or WEBP image."
+                else:
+                    image_filename = f"{secrets.token_hex(16)}.{extension}"
 
         if error:
             return render_template(
@@ -1170,20 +1248,18 @@ def create_event():
                 title="Create Event",
             ), 400
 
+        if image_filename:
+            image.save(EVENT_IMAGE_DIR / image_filename)
+
         connection = db()
         connection.execute(
             """
             INSERT INTO events(
-                name,
-                description,
-                venue,
-                event_date,
-                capacity,
-                created_at
+                name, description, venue, event_date, capacity, created_at, image_path, is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
             """,
-            (name, description, venue, event_date, capacity, now_iso()),
+            (name, description, venue, event_date, capacity, now_iso(), image_filename),
         )
         connection.commit()
         connection.close()
@@ -1197,6 +1273,43 @@ def create_event():
         form={},
         title="Create Event",
     )
+
+
+@app.post("/admin/events/<int:event_id>/remove")
+@admin_required
+def remove_event(event_id):
+    connection = db()
+    event = connection.execute(
+        "SELECT id, name, image_path FROM events WHERE id = ? AND is_active = 1",
+        (event_id,),
+    ).fetchone()
+    if not event:
+        connection.close()
+        return redirect(url_for("organizer"))
+
+    connection.execute(
+        "UPDATE events SET is_active = 0 WHERE id = ?",
+        (event_id,),
+    )
+    connection.commit()
+    connection.close()
+
+    if event["image_path"]:
+        image_file = EVENT_IMAGE_DIR / Path(event["image_path"]).name
+        try:
+            image_file.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    return redirect(url_for("organizer"))
+
+
+@app.get("/event-images/<path:filename>")
+def event_image(filename):
+    safe_name = Path(filename).name
+    if safe_name != filename or Path(safe_name).suffix.lower().lstrip(".") not in ALLOWED_EVENT_IMAGE_EXTENSIONS:
+        return "", 404
+    return send_from_directory(EVENT_IMAGE_DIR, safe_name)
 
 
 @app.post("/api/checkin")

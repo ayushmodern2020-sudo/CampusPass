@@ -1,39 +1,41 @@
 {% extends 'base.html' %}
 {% block content %}
 <a class="back-link" href="{{ url_for('events') }}">← All events</a>
-<section class="detail-layout">
-    <div class="detail-story">
-        <span class="section-kicker">EVENT {{ '%02d'|format(event.id) }}</span>
+<div class="event-detail-photo">
+    <div class="event-detail-photo-blur" style="background-image: url('{{ event.image_url }}');"></div>
+    <img src="{{ event.image_url }}" alt="{{ event.name }}" loading="eager">
+</div>
+<div class="two-col event-detail-layout">
+    <section>
+        <span class="eyebrow">EVENT {{ event.id }}</span>
         <h1>{{ event.name }}</h1>
-        <p class="detail-lead">{{ event.description }}</p>
-        <div class="fact-grid">
-            <div><span>WHEN</span><strong>{{ event.event_date }}</strong></div>
-            <div><span>WHERE</span><strong>{{ event.venue }}</strong></div>
-            <div><span>SPACES</span><strong>{{ registered }} / {{ event.capacity }}</strong></div>
-            <div><span>ACCOUNT</span><strong>{{ student_email }}</strong></div>
+        <p class="lead dark-lead">{{ event.description }}</p>
+        <div class="info-list">
+            <div><strong>Where</strong><span>{{ event.venue }}</span></div>
+            <div><strong>When</strong><span>{{ event.event_date }}</span></div>
+            <div><strong>Seats</strong><span>{{ registered }} / {{ event.capacity }} registered</span></div>
+            <div><strong>Booked as</strong><span>{{ student_email }}</span></div>
         </div>
-    </div>
-    <aside class="reserve-card">
+    </section>
+    <section class="panel reserve-panel">
         {% if existing_ticket %}
-            <span class="section-kicker">ALREADY RESERVED</span>
-            <h2>You're on the list.</h2>
-            <p>Your ticket for this event is already in your account.</p>
-            <a class="button primary full" href="{{ url_for('ticket_page', ticket_id=existing_ticket.id) }}">Open my ticket</a>
+            <span class="eyebrow">ALREADY IN YOUR WALLET</span>
+            <h2>You've got a ticket.</h2>
+            <p class="muted">No second booking needed. Your existing ticket is safe in your account.</p>
+            <a class="button full" href="{{ url_for('ticket_page', ticket_id=existing_ticket.id) }}">Open ticket</a>
         {% elif full %}
-            <span class="section-kicker">REGISTRATION CLOSED</span>
-            <h2>This one is full.</h2>
-            <p>No additional registrations can be accepted.</p>
-            <a class="button quiet full" href="{{ url_for('events') }}">Browse other events</a>
+            <div class="status error"><strong>This one is full.</strong><span>No more registrations can be accepted.</span></div>
+            <a class="button secondary full" href="{{ url_for('events') }}">Pick another event</a>
         {% else %}
-            <span class="section-kicker">RESERVE A PLACE</span>
+            <span class="eyebrow">SAVE ME A SEAT</span>
             <h2>Ready to go?</h2>
-            <p>You're signed in as <strong>{{ student_name }}</strong>. Confirm once and we'll issue a signed QR ticket for your account.</p>
+            <p class="muted">You're signed in as <strong>{{ student_name }}</strong>. We'll issue a signed QR ticket for this account.</p>
             <form method="post" action="{{ url_for('register', event_id=event.id) }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <button class="button primary full" type="submit">Reserve my place</button>
+                <button class="button full" type="submit">Confirm booking</button>
             </form>
-            <div class="mini-note"><strong>No double booking.</strong><span>One registration per student for this event.</span></div>
+            <div class="secure-note"><strong>Quietly secure.</strong><span>Your ticket is tied to your account, checked server-side, and can only be used once at the door.</span></div>
         {% endif %}
-    </aside>
-</section>
+    </section>
+</div>
 {% endblock %}

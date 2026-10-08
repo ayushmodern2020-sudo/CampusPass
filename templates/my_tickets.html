@@ -1,30 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="page-intro row-between">
+<div class="page-head">
     <div>
-        <span class="section-kicker">YOUR ACCOUNT</span>
-        <h1>My tickets.</h1>
-        <p class="lead">A simple list of everything you've reserved.</p>
+        <span class="eyebrow">YOUR WALLET</span>
+        <h1>Your tickets.</h1>
+        <p class="muted">Everything you've booked, without the screenshot hunt.</p>
     </div>
-    <a class="button primary" href="{{ url_for('events') }}">Find an event</a>
-</section>
-
-<section class="ticket-stack">
+    <a class="button" href="{{ url_for('events') }}">Find another event</a>
+</div>
+<div class="ticket-list">
 {% for ticket in tickets %}
-<article class="ticket-row">
-    <div class="ticket-code">#{{ ticket.id }}</div>
-    <div class="ticket-main-copy">
-        <div class="ticket-state {{ 'checked' if ticket.status == 'CHECKED-IN' else '' }}">{{ ticket.status }}</div>
+<article class="ticket-card">
+    <div class="ticket-status">
+        <span class="pill {{ 'green' if ticket.status == 'CHECKED-IN' else '' }}">{{ ticket.status }}</span>
+        <span class="ticket-number">PASS / #{{ ticket.id }}</span>
+    </div>
+    <div>
         <h3>{{ ticket.event_name }}</h3>
-        <p>{{ ticket.venue }} · {{ ticket.event_date }}</p>
+        <p class="muted">{{ ticket.venue }} · {{ ticket.event_date }}</p>
     </div>
     <div class="ticket-actions">
-        <a class="button quiet" href="{{ url_for('ticket_page', ticket_id=ticket.id) }}">View ticket</a>
-        <a class="text-link" href="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" target="_blank">Open QR</a>
+        <a class="button" href="{{ url_for('ticket_page', ticket_id=ticket.id) }}">Open pass</a>
+        <a class="button secondary" href="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" target="_blank">QR</a>
     </div>
 </article>
 {% else %}
-<div class="empty-state panel"><span class="section-kicker">NOTHING YET</span><h3>Your first ticket is waiting.</h3><p>Pick an event and reserve a place to see it here.</p><a class="button primary" href="{{ url_for('events') }}">Browse events</a></div>
+<div class="empty-state panel">
+    <h3>Your wallet is empty.</h3>
+    <p class="muted">Book an event and your first pass will appear here.</p>
+    <a class="button" href="{{ url_for('events') }}">Browse events</a>
+</div>
 {% endfor %}
-</section>
+</div>
 {% endblock %}

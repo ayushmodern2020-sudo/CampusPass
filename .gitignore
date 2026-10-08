@@ -8,3 +8,6 @@ data/qr/
 .tmp/
 .vscode/
 .idea/
+
+data/event_images/*
+!data/event_images/.gitkeep

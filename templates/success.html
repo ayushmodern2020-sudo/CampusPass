@@ -1,30 +1,38 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="success-page">
-    <div class="success-mark">✓</div>
-    <span class="section-kicker">REGISTRATION CONFIRMED</span>
-    <h1>You're booked.</h1>
-    <p class="lead">{{ ticket.event_name }} · Ticket #{{ ticket.id }}</p>
+<div class="success-wrap">
+    <div class="success-icon">✓</div>
+    <span class="eyebrow">PASS ISSUED / #{{ ticket.id }}</span>
+    <h1>You're on the list.</h1>
+    <p class="lead dark-lead">{{ ticket.event_name }} · {{ ticket.event_date }}</p>
 
-    <div class="pass-preview">
-        <div class="pass-left">
-            <span class="pass-label">{{ app_name }}</span>
-            <h2>{{ ticket.event_name }}</h2>
-            <div class="pass-facts"><span>{{ ticket.venue }}</span><span>{{ ticket.event_date }}</span><span>{{ ticket.participant_name }}</span></div>
-            <span class="ticket-state">{{ ticket.status }}</span>
+    <div class="ticket-preview">
+        <div class="qr-frame">
+            <img src="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" alt="Secure QR ticket">
         </div>
-        <div class="pass-qr"><img src="{{ url_for('ticket_qr', ticket_id=ticket.id) }}" alt="Secure QR ticket"></div>
+        <div class="ticket-copy">
+            <span class="pill green">{{ ticket.status }}</span>
+            <h3>{{ ticket.participant_name }}</h3>
+            <p>{{ ticket.venue }}</p>
+            <p>{{ ticket.event_date }}</p>
+            <p>{{ ticket.email }}</p>
+        </div>
     </div>
 
-    <div class="email-state {{ 'success' if email_result.mode == 'resend' else 'error' }}">
-        <strong>{{ email_result.message }}</strong><span>{{ email_result.provider }}</span>
+    <div class="button-row">
+        <a class="button" href="{{ url_for('ticket_page', ticket_id=ticket.id) }}">Open pass</a>
+        <a class="button secondary" href="{{ url_for('my_tickets') }}">My tickets</a>
     </div>
 
-    <div class="button-row center-row">
-        <a class="button primary" href="{{ url_for('ticket_page', ticket_id=ticket.id) }}">Open ticket</a>
-        <a class="button quiet" href="{{ url_for('my_tickets') }}">My tickets</a>
+    <div class="status success">
+        <strong>{{ email_result.message }}</strong>
+        <span>{{ email_result.provider }}</span>
     </div>
 
-    <details class="developer-box"><summary>Developer testing token</summary><textarea readonly>{{ token }}</textarea></details>
-</section>
+    <details class="test-box">
+        <summary>Developer testing token</summary>
+        <p class="muted">For local testing only. Do not share this token publicly.</p>
+        <textarea readonly>{{ token }}</textarea>
+    </details>
+</div>
 {% endblock %}

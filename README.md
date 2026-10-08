@@ -272,3 +272,9 @@ WEB04_Event_Ticketing_System/
 └── data/
     └── .gitkeep
 ```
+
+## UI direction
+
+The frontend uses a campus-editorial visual language rather than a generic SaaS dashboard. Warm paper tones, dark ink, coral accents, serif display type, hard borders, ticket-stub details, asymmetric event cards, and a simple organizer control center keep the interface closer to a student event desk than a template-heavy admin panel.
+
+See `FIGMA_DESIGN_GUIDE.md` for the visual tokens, layouts, components, and screen structure used for the redesign.

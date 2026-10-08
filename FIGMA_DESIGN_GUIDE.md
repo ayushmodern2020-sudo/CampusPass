@@ -1,62 +1,62 @@
-# CampusPass — Figma-first redesign guide
+# CampusPass UI Direction
 
-This refresh uses a deliberately editorial campus aesthetic instead of a generic dashboard template. The implementation in `templates/` + `static/style.css` is the code version of the same design language.
+This frontend uses a campus-editorial visual language rather than a generic SaaS dashboard style.
 
-## Direction
+## Visual idea
 
-- Mood: campus magazine / event poster / modern student union
-- Avoid: oversized gradients, excessive pill UI, glassmorphism, repetitive rounded cards
-- Surface: warm paper `#F6F2E9`
-- Ink: `#182229`
-- Navy: `#183544`
-- Teal: `#246A65`
-- Coral: `#D65B3E`
-- Yellow accent: `#E8C35A`
-- Lines: `#D8D0C2`
-- Card: `#FFFDF8`
-- Body font: Inter/system UI
-- Display headings: Georgia/serif
+CampusPass is treated like a student event desk mixed with a printed event pass. The interface uses warm paper tones, hard borders, asymmetric spacing, serif display headlines, restrained status colors, and small ticket-like details.
+
+## Core tokens
+
+- Paper: #F4F1EA
+- Paper 2: #EBE6DC
+- Ink: #161616
+- Navy: #172233
+- Coral: #E45D46
+- Blue: #4056C8
+- Mint: #CFE4DC
+- Yellow: #F1CF74
+- White: #FFFDF8
+- Muted: #777269
+
+## Typography
+
+Display: Georgia / Times-style serif
+
+UI: Segoe UI / Inter / Arial
 
 ## Figma frames
 
-Create frames at 1440×1024 for desktop and 390×844 for mobile.
+Desktop: 1440 x 1024
+Tablet: 1024 x 1366
+Mobile: 390 x 844
 
-Pages to design:
+## Screens to recreate
+
 1. Student Login
 2. Student Registration
-3. Events
-4. Event Detail / Reserve
+3. Events Board
+4. Event Detail / Booking
 5. My Tickets
-6. Ticket / QR Pass
+6. Digital Ticket
 7. Booking Success
 8. Organizer Login
 9. Organizer Dashboard
 10. Create Event
 
-## Core components
+## Components
 
-- Wordmark + square CP mark
-- Primary / quiet button
-- Section kicker
-- Event card
-- Ticket row
-- Status label
-- Fact grid
-- Form field
-- QR ticket pass
-- Organizer stat strip
-- Scanner panel
+- CampusPass wordmark
+- Hard-border button
+- Event poster card
+- Status marker
+- Ticket stub
+- QR frame
+- Stats tile
+- Scanner frame
+- Audit table
+- Security note
 
 ## Layout rules
 
-Use 8px spacing increments, thin 1px borders, and mostly 6–10px corner radii. Let typography and whitespace create hierarchy instead of shadows. Use asymmetric two-column layouts where appropriate.
-
-## How to use this with Figma
-
-1. Import the screenshots of the running pages into Figma as visual references.
-2. Recreate the frames/components using the tokens above.
-3. Use Auto Layout for cards/forms and a 12-column desktop grid.
-4. Keep the exact copy/labels from the code so the design maps one-to-one to the Flask templates.
-5. Export only any image assets you decide to add; the current implementation intentionally works without external image dependencies.
-
-The repo cannot generate a native `.fig` file here, but the code and design token sheet are aligned so a Figma file can be recreated directly and then handed back to the same CSS/templates without changing backend behavior.
+Use large display type only for page-level headings. Keep normal UI text small. Avoid stacking every element inside rounded cards. Use borders and whitespace to create hierarchy. Reserve coral for actions and attention, mint for successful states, yellow for highlights, and navy for large structural blocks.

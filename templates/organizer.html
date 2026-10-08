@@ -1,57 +1,98 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="admin-shell">
-    <div class="admin-hero">
-        <div><span class="section-kicker">ORGANIZER WORKSPACE</span><h1>Keep the room moving.</h1><p>Welcome back, {{ admin_username }}. Check people in, watch capacity, and publish the next event.</p></div>
-        <div class="admin-hero-actions"><a class="button primary" href="{{ url_for('create_event') }}">+ Create event</a><form method="post" action="{{ url_for('admin_logout') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="button quiet" type="submit">Sign out</button></form></div>
-    </div>
-
-    <div class="stats-strip">
-        <div><span>EVENTS</span><strong>{{ events|length }}</strong></div>
-        <div><span>TICKETS</span><strong>{{ total_tickets }}</strong></div>
-        <div><span>CHECKED IN</span><strong>{{ total_checked_in }}</strong></div>
-        <div><span>STUDENTS</span><strong>{{ total_students }}</strong></div>
-    </div>
-
-    <div class="scanner-columns">
-        <section class="scanner-card">
-            <div class="section-head-row"><div><span class="section-kicker">LIVE CHECK-IN</span><h2>Scan a ticket</h2><p>Use a camera or paste a signed ticket token.</p></div><span class="live-mark"><i></i> READY</span></div>
-            <div class="scanner-stage"><div id="reader"></div><div class="scanner-frame"></div></div>
-            <div class="scanner-actions"><button class="button primary" id="start-scan">Start camera</button><button class="button quiet" id="stop-scan">Stop</button></div>
-            <div class="scanner-status"><i></i><span id="camera-status">Camera is idle.</span></div>
-        </section>
-
-        <section class="verify-card">
-            <span class="section-kicker">MANUAL CHECK</span><h2>Ticket token</h2><p>Fallback for a QR that will not scan.</p>
-            <label for="token">Signed token<textarea id="token" rows="7" placeholder="Paste token here..."></textarea></label>
-            <button class="button primary full" id="verify-token">Verify ticket</button>
-            <div id="result" class="result idle"><span>READY</span><small>Waiting for a ticket.</small></div>
-            <div class="verify-list"><div><b>01</b><span>Signature verified server-side.</span></div><div><b>02</b><span>Single-use status checked atomically.</span></div><div><b>03</b><span>Successful scans written to the audit trail.</span></div></div>
-        </section>
-    </div>
-
-    <section class="admin-events-section">
-        <div class="section-head-row"><div><span class="section-kicker">EVENT MANAGEMENT</span><h2>Published events</h2></div><a class="text-link" href="{{ url_for('create_event') }}">Create another →</a></div>
-        <div class="admin-event-list">
-        {% for event in events %}
-            <article class="admin-event-row">
-                <div class="event-id">{{ '%02d'|format(loop.index) }}</div>
-                <div class="admin-event-copy"><div class="event-live-status">LIVE</div><h3>{{ event.name }}</h3><p>{{ event.event_date }} · {{ event.venue }}</p></div>
-                <div class="event-numbers"><span><b>{{ event.registered }}</b> registered</span><span><b>{{ event.checked_in }}</b> checked in</span><span><b>{{ event.capacity - event.registered if event.capacity - event.registered > 0 else 0 }}</b> remaining</span></div>
-                <button class="button quiet stats-button" type="button" data-event-id="{{ event.id }}">Refresh</button>
-                <div class="event-live-status" id="event-status-{{ event.id }}"></div>
-            </article>
-        {% else %}<div class="empty-state panel"><h3>No events published</h3><p>Create your first event to start accepting registrations.</p><a class="button primary" href="{{ url_for('create_event') }}">Create first event</a></div>{% endfor %}
+<div class="organizer-dashboard">
+    <div class="organizer-top">
+        <div>
+            <span class="eyebrow">ORGANIZER CONTROL CENTER</span>
+            <h1>Keep the door moving.</h1>
+            <p class="lead organizer-lead">Welcome back, {{ admin_username }}. Create events, scan passes, and keep one eye on attendance.</p>
         </div>
+        <div class="organizer-actions">
+            <div class="admin-status"><span class="status-dot"></span>Authenticated</div>
+            <a class="button" href="{{ url_for('create_event') }}">+ New event</a>
+            <form method="POST" action="{{ url_for('admin_logout') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="button secondary" type="submit">Sign out</button></form>
+        </div>
+    </div>
+
+    <div class="organizer-stats">
+        <div class="stat-card"><div class="stat-icon">01</div><div><span class="stat-label">EVENTS</span><strong>{{ events|length }}</strong></div></div>
+        <div class="stat-card"><div class="stat-icon">02</div><div><span class="stat-label">TICKETS ISSUED</span><strong>{{ total_tickets }}</strong></div></div>
+        <div class="stat-card"><div class="stat-icon">03</div><div><span class="stat-label">CHECKED IN</span><strong>{{ total_checked_in }}</strong></div></div>
+        <div class="stat-card"><div class="stat-icon">04</div><div><span class="stat-label">ATTENDANCE</span><strong>{% if total_tickets %}{{ ((total_checked_in / total_tickets) * 100)|round(1) }}%{% else %}0%{% endif %}</strong></div></div>
+    </div>
+
+    <div class="scanner-layout">
+        <section class="panel scanner-main">
+            <div class="section-title-row">
+                <div><span class="eyebrow">DOOR DUTY</span><h2>Scan a student pass</h2><p class="section-description">Use the camera for the normal flow. Every ticket is checked server-side before it becomes a successful check-in.</p></div>
+                <span class="secure-pill">● SECURE</span>
+            </div>
+            <div class="scanner-window"><div id="reader"></div><div class="scanner-overlay"></div></div>
+            <div class="scanner-controls"><button class="button" id="start-scan">Start camera</button><button class="button secondary" id="stop-scan">Stop camera</button></div>
+            <div class="camera-status"><span class="status-dot"></span><span id="camera-status">Camera is idle. Start it when you're ready.</span></div>
+        </section>
+
+        <section class="panel verification-panel">
+            <div class="section-title-row"><div><span class="eyebrow">BACKUP ROUTE</span><h2>Paste a token</h2></div></div>
+            <p class="section-description">Useful when a phone camera refuses to cooperate five minutes before an event starts.</p>
+            <label for="token">Signed ticket token</label>
+            <textarea id="token" rows="8" placeholder="Paste the ticket token here..."></textarea>
+            <button class="button full" id="verify-token">Verify pass</button>
+            <div id="result" class="result idle"><span>READY</span><small>Waiting for a scan.</small></div>
+            <div class="verification-info">
+                <div class="verification-item"><span class="verification-icon">✓</span><div><strong>Single use</strong><small>Checked-in passes cannot be admitted again.</small></div></div>
+                <div class="verification-item"><span class="verification-icon">◆</span><div><strong>Signed token</strong><small>Forged or expired tokens are rejected.</small></div></div>
+                <div class="verification-item"><span class="verification-icon">●</span><div><strong>Audit trail</strong><small>Successful and failed scans are recorded.</small></div></div>
+            </div>
+        </section>
+    </div>
+
+    <section class="events-section">
+        <div class="section-title-row">
+            <div><span class="eyebrow">EVENT DESK</span><h2>What's live</h2><p class="section-description">Your current event board and its registration numbers.</p></div>
+            <a class="button" href="{{ url_for('create_event') }}">+ Create event</a>
+        </div>
+        {% if events %}
+        <div class="organizer-event-grid">
+            {% for event in events %}
+            <article class="organizer-event-card organizer-event-photo-card">
+                <div class="organizer-event-photo" style="background-image: url('{{ event.image_url }}');">
+                    <img src="{{ event.image_url }}" alt="{{ event.name }}" loading="lazy">
+                </div>
+                <div class="event-card-top"><span class="event-number">EVENT {{ event.id }}</span><span class="event-status">ACTIVE</span></div>
+                <h3>{{ event.name }}</h3>
+                <div class="organizer-event-details">
+                    <div><span>DATE</span><strong>{{ event.event_date }}</strong></div>
+                    <div><span>VENUE</span><strong>{{ event.venue }}</strong></div>
+                    <div><span>REGISTERED</span><strong>{{ event.registered }} / {{ event.capacity }}</strong></div>
+                    <div><span>CHECKED IN</span><strong>{{ event.checked_in }}</strong></div>
+                </div>
+                <div class="organizer-event-actions">
+                    <a class="button secondary" href="{{ url_for('event_page', event_id=event.id) }}">View</a>
+                    <form method="POST" action="{{ url_for('remove_event', event_id=event.id) }}" onsubmit="return confirm('Remove {{ event.name|e }} from the student event board? Existing tickets and check-in records will be kept.');">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <button class="button danger" type="submit">Remove event</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-events"><strong>No events yet.</strong><p class="muted">Publish the first one from the event desk.</p><a class="button" href="{{ url_for('create_event') }}">Create first event</a></div>
+        {% endif %}
     </section>
 
-    <section class="audit-section">
-        <div class="section-head-row"><div><span class="section-kicker">RECENT ACTIVITY</span><h2>Check-in audit</h2></div><span class="muted">Latest 12 attempts</span></div>
+    <section class="recent-audit">
+        <div class="section-title-row"><div><span class="eyebrow">RECENT ACTIVITY</span><h2>Door log</h2></div></div>
         {% if recent_audit %}
-        <div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Ticket</th><th>Attendee</th><th>Status</th><th>Organizer</th><th>Time</th></tr></thead><tbody>{% for item in recent_audit %}<tr><td>#{{ item.ticket_id }}</td><td>{{ item.participant_name }}</td><td><span class="audit-status {{ 'ok' if item.status == 'CHECKED-IN' else 'warn' }}">{{ item.status }}</span></td><td>{{ item.admin_username }}</td><td>{{ item.scanned_at }}</td></tr>{% endfor %}</tbody></table></div>
-        {% else %}<div class="empty-state panel"><p>No check-in activity yet.</p></div>{% endif %}
+        <div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Time</th><th>Ticket</th><th>Attendee</th><th>Organizer</th><th>Status</th><th>Message</th></tr></thead><tbody>{% for row in recent_audit %}<tr><td>{{ row.scanned_at }}</td><td>#{{ row.ticket_id or '—' }}</td><td>{{ row.participant_name or '—' }}</td><td>{{ row.admin_username or '—' }}</td><td class="audit-status {{ 'ok' if row.status == 'CHECKED-IN' else 'warn' }}">{{ row.status }}</td><td>{{ row.message }}</td></tr>{% endfor %}</tbody></table></div>
+        {% else %}
+        <div class="empty-events"><span class="muted">No scans recorded yet.</span></div>
+        {% endif %}
     </section>
-</section>
+
+    <section class="security-banner"><div class="security-banner-icon">🔒</div><div><strong>Organizer-only verification</strong><p>Students cannot access the organizer tools. Ticket validation, single-use status and audit logging happen on the server.</p></div></section>
+</div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="{{ url_for('static', filename='organizer.js') }}"></script>
 {% endblock %}

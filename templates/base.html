@@ -8,48 +8,32 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<header class="site-header">
-    <div class="header-inner">
-        <a class="wordmark" href="{{ url_for('events') if student_authenticated else url_for('student_login') }}">
-            <span class="wordmark-mark">CP</span>
-            <span class="wordmark-name">{{ app_name }}</span>
-        </a>
-
+<nav class="nav">
+    <a class="brand" href="{{ url_for('events') if student_authenticated else url_for('organizer') if admin_authenticated else url_for('student_login') }}">
+        <span class="brand-mark">CP</span>
+        <span>{{ app_name }}</span>
+    </a>
+    <div class="nav-links">
         {% if student_authenticated %}
-        <nav class="site-nav" aria-label="Student navigation">
-            <a class="nav-link" href="{{ url_for('events') }}">Events</a>
-            <a class="nav-link" href="{{ url_for('my_tickets') }}">My tickets</a>
-            <span class="account-tag">{{ student_name }}</span>
-            <form method="post" action="{{ url_for('student_logout') }}" class="inline-form">
+            <a href="{{ url_for('events') }}">Events</a>
+            <a href="{{ url_for('my_tickets') }}">My Tickets</a>
+            <span class="nav-user">{{ student_name }}</span>
+            <form method="post" action="{{ url_for('student_logout') }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <button class="nav-logout" type="submit">Sign out</button>
+                <button class="nav-button" type="submit">Sign out</button>
             </form>
-        </nav>
         {% elif admin_authenticated %}
-        <nav class="site-nav" aria-label="Organizer navigation">
-            <a class="nav-link" href="{{ url_for('organizer') }}">Dashboard</a>
-            <a class="nav-link nav-link-accent" href="{{ url_for('create_event') }}">Create event</a>
-            <span class="account-tag">{{ admin_username }}</span>
-            <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
+            <a href="{{ url_for('organizer') }}">Dashboard</a>
+            <a href="{{ url_for('create_event') }}">Create event</a>
+            <span class="nav-user">{{ admin_username }}</span>
+            <form method="post" action="{{ url_for('admin_logout') }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <button class="nav-logout" type="submit">Sign out</button>
+                <button class="nav-button" type="submit">Sign out</button>
             </form>
-        </nav>
         {% endif %}
     </div>
-</header>
-
-<main class="site-main">
-{% block content %}{% endblock %}
-</main>
-
-<footer class="site-footer">
-    <div class="footer-inner">
-        <span>{{ app_name }}</span>
-        <span>Student events · secure tickets · organizer verification</span>
-    </div>
-</footer>
-
+</nav>
+<main class="page">{% block content %}{% endblock %}</main>
+<footer class="footer">CampusPass · events worth showing up for</footer>
 </body>
 </html>
